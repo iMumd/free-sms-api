@@ -51,6 +51,7 @@ free-sms-api/
     API.md                    Full API reference
   autoload.php                PSR-4 autoloader (no Composer needed)
   composer.json
+  CONTRIBUTING.md             How to add a new source
   LICENSE
 ```
 
@@ -135,12 +136,17 @@ php examples/cli.php random all 5
   as "code" or "verification" and can occasionally pick a non-code number in
   unusual messages.
 
-## Adding a new source
+## Contributing
+
+This project is open source and pull requests are welcome — adding a new
+source website is the most useful contribution. In short:
 
 1. Create a class in `src/Provider/` that extends `AbstractProvider`.
 2. Set its `SLUG`, `NAME` and `baseUrl`, and implement `getUsNumbers()` and
    `getMessages()`.
 3. Register it in the constructor of `src/SmsAggregator.php`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## Legal and responsible use
 
