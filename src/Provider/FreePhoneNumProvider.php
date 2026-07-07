@@ -6,12 +6,13 @@ namespace FreeSms\Provider;
 
 use DOMElement;
 use FreeSms\Support\CodeExtractor;
+use FreeSms\Support\PhoneNumber;
 
 /**
  * Provider for freephonenum.com.
  *
  *   Number listing : /us
- *   Number page     : /us/receive-sms/{number}
+ *   Number page     : /us/receive-sms/{number} (local 10-digit form)
  *   Message markup  : .msg -> .font-bold (sender) / a.mono (masked number) / .js-msgtext (body)
  *
  * The site does not expose a per-message timestamp, so "time" is empty.
@@ -53,7 +54,7 @@ final class FreePhoneNumProvider extends AbstractProvider
 
             $numbers[] = [
                 'source'    => self::SLUG,
-                'number'    => $number,
+                'number'    => PhoneNumber::us($number),
                 'display'   => $display,
                 'link'      => $this->baseUrl . '/us/receive-sms/' . $number,
                 'messages'  => null,
@@ -70,7 +71,7 @@ final class FreePhoneNumProvider extends AbstractProvider
 
     public function getMessages(string $number, int $limit = 20): array
     {
-        $number = $this->normaliseNumber($number);
+        $number = PhoneNumber::usLocal($this->normaliseNumber($number));
         $html   = $this->http->getHtml($this->baseUrl . '/us/receive-sms/' . $number);
         $xpath  = $this->xpath($html);
         $items  = $xpath->query('//div[' . self::hasClass('msg') . ']');
