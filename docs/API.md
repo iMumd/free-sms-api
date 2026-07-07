@@ -25,8 +25,8 @@ one envelope.
 | Parameter | Applies to          | Default | Description                                                   |
 | --------- | ------------------- | ------- | ------------------------------------------------------------- |
 | `action`  | all                 | `numbers` | Endpoint selector.                                          |
-| `source`  | numbers, number, messages, latest | `all` | A source slug, or `all` to merge every source. |
-| `limit`   | numbers, messages, latest | `20` | Maximum items. Clamped to the range 1-100.             |
+| `source`  | numbers, number, messages, latest, random | `all` | A source slug, or `all` to merge every source. |
+| `limit`   | numbers, messages, latest, random | `20` | Maximum items. Clamped to the range 1-100.     |
 | `number`  | messages            | none    | Target phone number, digits only (non-digits are stripped).   |
 
 Source slugs come from the `sources` endpoint. Current values:
@@ -239,6 +239,57 @@ Response:
   "error": null
 }
 ```
+
+### GET ?action=random
+
+Picks a random number from the available pool, then returns its messages and
+the distinct verification codes extracted from them, in a single call. Each
+call may pick a different number.
+
+Request:
+
+```
+GET /?action=random&limit=2
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "number": {
+      "source": "receive-sms.cc",
+      "number": "15597455839",
+      "display": "+1 5597455839",
+      "link": "https://receive-sms.cc/US-Phone-Number/15597455839",
+      "messages": 999,
+      "last_seen": "5 months ago"
+    },
+    "messages": [
+      {
+        "source": "receive-sms.cc",
+        "from": "+18557256796",
+        "time": "5 months ago",
+        "text": "Your verification code is 301021",
+        "code": "301021"
+      },
+      {
+        "source": "receive-sms.cc",
+        "from": "+13853931482",
+        "time": "5 months ago",
+        "text": "From Snap Guard! Here is your verification code to continue: 501018",
+        "code": "501018"
+      }
+    ],
+    "codes": ["301021", "501018"]
+  },
+  "error": null
+}
+```
+
+`codes` lists the distinct non-null `code` values from `messages`, in message
+order. It is empty when the number has no messages with a detectable code.
 
 ---
 

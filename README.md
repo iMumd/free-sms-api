@@ -66,6 +66,7 @@ curl "http://127.0.0.1:8080/?action=sources"
 curl "http://127.0.0.1:8080/?action=numbers&limit=5"
 curl "http://127.0.0.1:8080/?action=messages&number=16465180948&source=receive-sms.cc&limit=5"
 curl "http://127.0.0.1:8080/?action=latest&limit=5"
+curl "http://127.0.0.1:8080/?action=random&limit=5"
 ```
 
 ## Endpoints
@@ -77,6 +78,7 @@ curl "http://127.0.0.1:8080/?action=latest&limit=5"
 | `number`   | `source`                                | First available number.                      |
 | `messages` | `number` (required), `source`, `limit`  | Latest messages and codes for a number.      |
 | `latest`   | `source`, `limit`                       | Pick a number and return its messages.       |
+| `random`   | `source`, `limit`                       | Pick a random number and return its messages and extracted codes. |
 
 `source` defaults to `all` (merge every source). `limit` defaults to 20 and is
 clamped to 1-100. See `docs/API.md` for the full reference and example payloads.
@@ -116,6 +118,7 @@ php examples/cli.php sources
 php examples/cli.php numbers all 5
 php examples/cli.php messages 16465180948 receive-sms.cc 5
 php examples/cli.php latest freephonenum.com 5
+php examples/cli.php random all 5
 ```
 
 ## Notes and limitations
