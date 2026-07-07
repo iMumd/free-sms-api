@@ -8,11 +8,13 @@
  *   php examples/cli.php numbers [source] [limit]
  *   php examples/cli.php messages <number> [source] [limit]
  *   php examples/cli.php latest [source] [limit]
+ *   php examples/cli.php random [source] [limit]
  *
  * Examples:
  *   php examples/cli.php numbers all 5
  *   php examples/cli.php messages 16465180948 receive-sms.cc 5
  *   php examples/cli.php latest freephonenum.com 5
+ *   php examples/cli.php random all 5
  */
 
 declare(strict_types=1);
@@ -56,6 +58,17 @@ try {
             $source = $argv[2] ?? 'all';
             $limit  = (int) ($argv[3] ?? 20);
             out($sms->latest($source, $limit));
+            break;
+
+        case 'random':
+            $source = $argv[2] ?? 'all';
+            $limit  = (int) ($argv[3] ?? 20);
+            $result = $sms->random($source, $limit);
+            if ($result === null) {
+                fwrite(STDERR, "No numbers available.\n");
+                exit(1);
+            }
+            out($result);
             break;
 
         default:
