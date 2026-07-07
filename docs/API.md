@@ -27,7 +27,7 @@ one envelope.
 | `action`  | all                 | `numbers` | Endpoint selector.                                          |
 | `source`  | numbers, number, messages, latest, random | `all` | A source slug, or `all` to merge every source. |
 | `limit`   | numbers, messages, latest, random | `20` | Maximum items. Clamped to the range 1-100.     |
-| `number`  | messages            | none    | Target phone number, digits only (non-digits are stripped).   |
+| `number`  | messages            | none    | Target phone number. Non-digits are stripped; the country code is optional (`8044064234` and `18044064234` both work). |
 
 Source slugs come from the `sources` endpoint. Current values:
 
@@ -50,6 +50,8 @@ Number object:
 }
 ```
 
+`number` is always the canonical US form with the country code
+(`1` + 10 digits), regardless of how the source site formats it.
 `messages` (count) and `last_seen` may be `null` when a source does not
 publish them (for example `freephonenum.com`).
 
@@ -124,7 +126,7 @@ Response:
     },
     {
       "source": "freephonenum.com",
-      "number": "2027599156",
+      "number": "12027599156",
       "display": "(202) 759-9156",
       "link": "https://freephonenum.com/us/receive-sms/2027599156",
       "messages": null,

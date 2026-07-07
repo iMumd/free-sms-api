@@ -127,6 +127,9 @@ php examples/cli.php random all 5
 
 ## Notes and limitations
 
+- Numbers are always returned in the canonical US form with the country code
+  (`1` + 10 digits), whatever format the source site uses. As input, both
+  forms are accepted on every source.
 - HTML scraping depends on each site's markup; if a site changes its layout,
   the matching provider may need updated selectors.
 - `time` is empty for sources that do not publish per-message timestamps
