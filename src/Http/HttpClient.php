@@ -7,7 +7,8 @@ namespace FreeSms\Http;
 use RuntimeException;
 
 /**
- * Thin cURL wrapper that fetches HTML pages using real browser headers.
+ * Thin cURL wrapper that fetches HTML pages and JSON endpoints using real
+ * browser headers.
  *
  * It retries transient failures with a linear backoff and keeps a small
  * per-instance response cache so the same URL is not fetched twice within
@@ -34,6 +35,40 @@ final class HttpClient
      */
     public function getHtml(string $url, string $referer = ''): string
     {
+        return $this->request($url, $referer, [
+            'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Sec-Fetch-Mode: navigate',
+            'Upgrade-Insecure-Requests: 1',
+        ]);
+    }
+
+    /**
+     * Fetch a URL and decode its body as a JSON object/array.
+     *
+     * @return array<mixed>
+     * @throws RuntimeException when every attempt fails or the body is not valid JSON.
+     */
+    public function getJson(string $url, string $referer = ''): array
+    {
+        $body = $this->request($url, $referer, [
+            'Accept: application/json, */*;q=0.8',
+            'Sec-Fetch-Mode: cors',
+        ]);
+
+        $data = json_decode($body, true);
+        if (!is_array($data)) {
+            throw new RuntimeException("Invalid JSON from {$url}: " . json_last_error_msg());
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param array<int,string> $headers request-specific headers merged with the common set
+     * @throws RuntimeException when every attempt fails.
+     */
+    private function request(string $url, string $referer, array $headers): string
+    {
         if (isset($this->cache[$url])) {
             return $this->cache[$url];
         }
@@ -51,13 +86,10 @@ final class HttpClient
                 CURLOPT_ENCODING       => '',
                 CURLOPT_SSL_VERIFYPEER => true,
                 CURLOPT_USERAGENT      => self::USER_AGENT,
-                CURLOPT_HTTPHEADER     => [
-                    'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                CURLOPT_HTTPHEADER     => array_merge($headers, [
                     'Accept-Language: en-US,en;q=0.7',
                     'Referer: ' . ($referer !== '' ? $referer : $url),
-                    'Sec-Fetch-Mode: navigate',
-                    'Upgrade-Insecure-Requests: 1',
-                ],
+                ]),
             ]);
 
             $body   = curl_exec($ch);
