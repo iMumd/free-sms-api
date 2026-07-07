@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FreeSms;
 
 use RuntimeException;
+use FreeSms\Support\PhoneNumber;
 use FreeSms\Provider\EsimPlusProvider;
 use FreeSms\Provider\FreePhoneNumProvider;
 use FreeSms\Provider\ProviderInterface;
@@ -88,7 +89,7 @@ final class SmsAggregator
      */
     public function messages(string $number, string $source = 'all', int $limit = 20): array
     {
-        $digits = preg_replace('/\D+/', '', $number) ?? '';
+        $digits = PhoneNumber::us($number);
         $errors = [];
 
         foreach ($this->resolve($source) as $slug => $provider) {
