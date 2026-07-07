@@ -8,6 +8,7 @@ use DOMDocument;
 use DOMXPath;
 use InvalidArgumentException;
 use FreeSms\Http\HttpClient;
+use FreeSms\Support\PhoneNumber;
 
 /**
  * Shared base for HTML-scraping providers.
@@ -43,10 +44,10 @@ abstract class AbstractProvider implements ProviderInterface
         return $this->getUsNumbers(1)[0] ?? null;
     }
 
-    /** Normalise a phone value to digits only, rejecting empty input. */
+    /** Normalise a phone value to canonical US digits ("1..."), rejecting empty input. */
     protected function normaliseNumber(string $number): string
     {
-        $digits = preg_replace('/\D+/', '', $number) ?? '';
+        $digits = PhoneNumber::us($number);
         if ($digits === '') {
             throw new InvalidArgumentException('A numeric phone number is required.');
         }
