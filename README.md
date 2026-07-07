@@ -8,13 +8,15 @@ Sources currently supported:
 
 - receive-sms.cc
 - freephonenum.com
+- esimplus.me
 
 ## How it works
 
 These websites do not offer an official JSON API. The service fetches their
-public pages over HTTPS with normal browser headers and parses the HTML into a
-normalised structure. Each source is a small provider class behind a common
-interface, and an aggregator merges them behind a single endpoint.
+public pages over HTTPS with normal browser headers and parses the HTML (or,
+where a site exposes one, an internal JSON endpoint) into a normalised
+structure. Each source is a small provider class behind a common interface,
+and an aggregator merges them behind a single endpoint.
 
 ## Requirements
 
@@ -41,6 +43,7 @@ free-sms-api/
       AbstractProvider.php    Shared scraping helpers
       ReceiveSmsCcProvider.php
       FreePhoneNumProvider.php
+      EsimPlusProvider.php
   examples/
     cli.php                   Command-line usage
     responses/                Real sample responses
@@ -126,7 +129,8 @@ php examples/cli.php random all 5
 - HTML scraping depends on each site's markup; if a site changes its layout,
   the matching provider may need updated selectors.
 - `time` is empty for sources that do not publish per-message timestamps
-  (for example freephonenum.com).
+  (for example freephonenum.com). Its format follows the source: relative
+  text on receive-sms.cc, ISO 8601 timestamps on esimplus.me.
 - Code extraction is heuristic. It prefers a digit run next to a keyword such
   as "code" or "verification" and can occasionally pick a non-code number in
   unusual messages.
@@ -142,9 +146,9 @@ php examples/cli.php random all 5
 
 This project does not own or host any phone numbers or SMS content. All data is
 fetched at runtime from third-party websites and remains the property of those
-sites and their owners. The names and page content of receive-sms.cc and
-freephonenum.com belong to their respective owners and are referenced only to
-locate publicly displayed data.
+sites and their owners. The names and page content of receive-sms.cc,
+freephonenum.com and esimplus.me belong to their respective owners and are
+referenced only to locate publicly displayed data.
 
 The numbers on these sites are public and shared by many people. Do not use
 them for private accounts, real identity verification, or anything requiring

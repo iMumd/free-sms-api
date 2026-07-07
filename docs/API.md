@@ -33,6 +33,7 @@ Source slugs come from the `sources` endpoint. Current values:
 
 - `receive-sms.cc`
 - `freephonenum.com`
+- `esimplus.me`
 
 ## Data shapes
 
