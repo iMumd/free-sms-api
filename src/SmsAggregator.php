@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FreeSms;
 
 use RuntimeException;
+use FreeSms\Provider\EsimPlusProvider;
 use FreeSms\Provider\FreePhoneNumProvider;
 use FreeSms\Provider\ProviderInterface;
 use FreeSms\Provider\ReceiveSmsCcProvider;
@@ -27,6 +28,7 @@ final class SmsAggregator
         $providers ??= [
             new ReceiveSmsCcProvider(),
             new FreePhoneNumProvider(),
+            new EsimPlusProvider(),
         ];
 
         $this->providers = [];
