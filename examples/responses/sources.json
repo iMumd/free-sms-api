@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "data": [
+    {
+      "slug": "receive-sms.cc",
+      "name": "Receive SMS CC"
+    },
+    {
+      "slug": "freephonenum.com",
+      "name": "FreePhoneNum"
+    }
+  ],
+  "error": null
+}
