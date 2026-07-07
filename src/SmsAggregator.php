@@ -108,6 +108,42 @@ final class SmsAggregator
         return ['source' => null, 'number' => $digits, 'messages' => [], 'errors' => $errors];
     }
 
+    /** Random available number across the selected providers, or null. */
+    public function randomNumber(string $source = 'all', int $limit = 30): ?array
+    {
+        $pool = $this->numbers($source, $limit)['numbers'];
+        if ($pool === []) {
+            return null;
+        }
+        return $pool[array_rand($pool)];
+    }
+
+    /**
+     * Pick a random available number and return its messages together with the
+     * distinct verification codes extracted from them.
+     *
+     * @return array{number:array<string,mixed>, messages:array<int,array<string,mixed>>, codes:array<int,string>}|null
+     */
+    public function random(string $source = 'all', int $limit = 20): ?array
+    {
+        $number = $this->randomNumber($source);
+        if ($number === null) {
+            return null;
+        }
+
+        $messages = $this->providers[$number['source']]->getMessages($number['number'], $limit);
+
+        $codes = [];
+        foreach ($messages as $message) {
+            $code = $message['code'] ?? null;
+            if ($code !== null && !in_array($code, $codes, true)) {
+                $codes[] = $code;
+            }
+        }
+
+        return ['number' => $number, 'messages' => $messages, 'codes' => $codes];
+    }
+
     /**
      * Pick the first available number and return its messages in one call.
      *
