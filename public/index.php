@@ -12,6 +12,7 @@
  *   ?action=number    [&source=all|<slug>]
  *   ?action=messages   &number=<digits> [&source=all|<slug>] [&limit=N]
  *   ?action=latest    [&source=all|<slug>] [&limit=N]
+ *   ?action=random    [&source=all|<slug>] [&limit=N]
  *
  * See docs/API.md for the full reference and examples.
  */
@@ -91,6 +92,12 @@ try {
             $latest !== null
                 ? respond(true, $latest)
                 : respond(false, null, 'Could not fetch recent messages.', 502);
+
+        case 'random':
+            $random = $sms->random($source, $limit);
+            $random !== null
+                ? respond(true, $random)
+                : respond(false, null, 'No numbers available.', 404);
 
         default:
             respond(false, null, "Unknown action: {$action}", 400);
