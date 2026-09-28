@@ -102,7 +102,9 @@ final class SmsAggregator
      */
     public function messages(string $number, string $source = 'all', int $limit = 20): array
     {
-        $digits = PhoneNumber::us($number);
+        // Reject an undiallable number once, up front, rather than letting
+        // every provider spend a request discovering the same 404.
+        $digits = PhoneNumber::requireUs($number);
         $errors = [];
 
         foreach ($this->resolve($source) as $slug => $provider) {

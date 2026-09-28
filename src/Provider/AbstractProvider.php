@@ -6,7 +6,6 @@ namespace FreeSms\Provider;
 
 use DOMDocument;
 use DOMXPath;
-use InvalidArgumentException;
 use FreeSms\Http\HttpClient;
 use FreeSms\Support\PhoneNumber;
 
@@ -44,14 +43,10 @@ abstract class AbstractProvider implements ProviderInterface
         return $this->getUsNumbers(1)[0] ?? null;
     }
 
-    /** Normalise a phone value to canonical US digits ("1..."), rejecting empty input. */
+    /** Normalise a phone value to canonical US digits ("1..."). */
     protected function normaliseNumber(string $number): string
     {
-        $digits = PhoneNumber::us($number);
-        if ($digits === '') {
-            throw new InvalidArgumentException('A numeric phone number is required.');
-        }
-        return $digits;
+        return PhoneNumber::requireUs($number);
     }
 
     protected function xpath(string $html): DOMXPath

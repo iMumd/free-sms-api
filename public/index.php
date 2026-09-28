@@ -22,6 +22,7 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/autoload.php';
 
 use FreeSms\SmsAggregator;
+use FreeSms\Support\PhoneNumber;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -73,6 +74,15 @@ try {
             $number = (string) ($_GET['number'] ?? '');
             if ($number === '') {
                 respond(false, null, "The 'number' parameter is required.", 400);
+            }
+            if (!PhoneNumber::isUs($number)) {
+                respond(
+                    false,
+                    null,
+                    'The \'number\' parameter must be a US phone number of 10 digits, '
+                    . 'optionally with a leading country code.',
+                    400
+                );
             }
             $result = $sms->messages($number, $source, $limit);
             if ($result['messages'] !== []) {
