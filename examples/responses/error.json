@@ -1,5 +1,5 @@
 {
-  "ok": false,
-  "data": null,
-  "error": "The 'number' parameter is required."
+    "ok": false,
+    "data": null,
+    "error": "The 'number' parameter must be a US phone number of 10 digits, optionally with a leading country code."
 }
