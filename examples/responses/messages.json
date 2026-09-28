@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "data": {
+    "source": "receive-sms.cc",
+    "number": "16465180948",
+    "messages": [
+      {
+        "source": "receive-sms.cc",
+        "from": "samsung",
+        "time": "10 seconds ago",
+        "text": "Account: 168388 is your Samsung account verification code.bP2ROrn3fZQ",
+        "code": "168388"
+      },
+      {
+        "source": "receive-sms.cc",
+        "from": "17728770820",
+        "time": "10 minutes ago",
+        "text": "Your SpyFu verification code is: 069511",
+        "code": "069511"
+      }
+    ]
+  },
+  "error": null
+}
