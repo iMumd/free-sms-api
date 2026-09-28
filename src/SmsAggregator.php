@@ -10,6 +10,7 @@ use FreeSms\Provider\EsimPlusProvider;
 use FreeSms\Provider\FreePhoneNumProvider;
 use FreeSms\Provider\ProviderInterface;
 use FreeSms\Provider\ReceiveSmsCcProvider;
+use FreeSms\Provider\ReceiveSmsOnlineProvider;
 
 /**
  * Facade that registers every provider and merges their results behind a
@@ -41,6 +42,7 @@ final class SmsAggregator
     {
         $providers ??= [
             new ReceiveSmsCcProvider(),
+            new ReceiveSmsOnlineProvider(),
             new FreePhoneNumProvider(),
             new EsimPlusProvider(),
         ];

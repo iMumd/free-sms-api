@@ -13,8 +13,11 @@ use RuntimeException;
  * It retries transient failures with a linear backoff and keeps a small
  * per-instance response cache so the same URL is not fetched twice within
  * one request lifecycle.
+ *
+ * Not final: providers take an HttpClient by constructor injection, so a test
+ * can pass a subclass that serves a saved fixture instead of doing I/O.
  */
-final class HttpClient
+class HttpClient
 {
     private const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
         . '(KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
