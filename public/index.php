@@ -102,6 +102,10 @@ try {
         default:
             respond(false, null, "Unknown action: {$action}", 400);
     }
+} catch (InvalidArgumentException $e) {
+    // A malformed request (unknown source, unusable number) is the caller's
+    // fault, not an upstream failure, so it must not be reported as 502.
+    respond(false, null, $e->getMessage(), 400);
 } catch (Throwable $e) {
     respond(false, null, $e->getMessage(), 502);
 }

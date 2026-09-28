@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FreeSms;
 
-use RuntimeException;
+use InvalidArgumentException;
 use FreeSms\Support\PhoneNumber;
 use FreeSms\Provider\EsimPlusProvider;
 use FreeSms\Provider\FreePhoneNumProvider;
@@ -173,7 +173,7 @@ final class SmsAggregator
 
     /**
      * @return array<string,ProviderInterface>
-     * @throws RuntimeException on unknown slug
+     * @throws InvalidArgumentException on unknown slug
      */
     private function resolve(string $source): array
     {
@@ -182,7 +182,7 @@ final class SmsAggregator
         }
 
         if (!isset($this->providers[$source])) {
-            throw new RuntimeException(
+            throw new InvalidArgumentException(
                 "Unknown source '{$source}'. Available: " . implode(', ', array_keys($this->providers))
             );
         }
