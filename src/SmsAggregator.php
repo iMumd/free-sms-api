@@ -145,7 +145,13 @@ final class SmsAggregator
             return null;
         }
 
-        $messages = $this->providers[$number['source']]->getMessages($number['number'], $limit);
+        try {
+            $messages = $this->providers[$number['source']]->getMessages($number['number'], $limit);
+        } catch (\Throwable) {
+            // The listing succeeded but the message fetch failed; report the
+            // number with an empty inbox rather than failing the whole call.
+            $messages = [];
+        }
 
         $codes = [];
         foreach ($messages as $message) {
