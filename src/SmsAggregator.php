@@ -18,6 +18,12 @@ use FreeSms\Provider\ReceiveSmsCcProvider;
  */
 final class SmsAggregator
 {
+    /**
+     * How many numbers random() draws its candidate pool from. Kept separate
+     * from the per-call $limit so that a small limit never narrows the pool.
+     */
+    private const RANDOM_POOL_SIZE = 30;
+
     /** @var array<string,ProviderInterface> */
     private array $providers;
 
@@ -112,9 +118,9 @@ final class SmsAggregator
     }
 
     /** Random available number across the selected providers, or null. */
-    public function randomNumber(string $source = 'all', int $limit = 30): ?array
+    public function randomNumber(string $source = 'all', int $poolSize = self::RANDOM_POOL_SIZE): ?array
     {
-        $pool = $this->numbers($source, $limit)['numbers'];
+        $pool = $this->numbers($source, $poolSize)['numbers'];
         if ($pool === []) {
             return null;
         }
@@ -124,6 +130,11 @@ final class SmsAggregator
     /**
      * Pick a random available number and return its messages together with the
      * distinct verification codes extracted from them.
+     *
+     * $limit bounds the returned messages and codes only. The number is drawn
+     * from a pool of RANDOM_POOL_SIZE candidates, which is deliberately kept
+     * independent of $limit: sharing the value would collapse the pool to a
+     * single entry for small limits and make the choice deterministic.
      *
      * @return array{number:array<string,mixed>, messages:array<int,array<string,mixed>>, codes:array<int,string>}|null
      */
