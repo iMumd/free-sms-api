@@ -6,6 +6,10 @@
             "name": "Receive SMS CC"
         },
         {
+            "slug": "receivesmsonline.net",
+            "name": "Receive SMS Online"
+        },
+        {
             "slug": "freephonenum.com",
             "name": "FreePhoneNum"
         },

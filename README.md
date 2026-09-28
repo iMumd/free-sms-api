@@ -7,6 +7,7 @@ websites behind one endpoint.
 Sources currently supported:
 
 - receive-sms.cc
+- receivesmsonline.net
 - freephonenum.com
 - esimplus.me
 
@@ -43,6 +44,7 @@ free-sms-api/
       ProviderInterface.php   Provider contract
       AbstractProvider.php    Shared scraping helpers
       ReceiveSmsCcProvider.php
+      ReceiveSmsOnlineProvider.php
       FreePhoneNumProvider.php
       EsimPlusProvider.php
   examples/
@@ -53,9 +55,11 @@ free-sms-api/
   tests/
     run.php                   Dependency-free test runner
     FakeProvider.php          Scripted provider used by the aggregator tests
+    fixtures/                 Saved pages used by the provider parser tests
     CodeExtractorTest.php
     PhoneNumberTest.php
     SmsAggregatorTest.php
+    ReceiveSmsOnlineProviderTest.php
   autoload.php                PSR-4 autoloader (no Composer needed)
   composer.json
   CONTRIBUTING.md             How to add a new source
@@ -90,9 +94,15 @@ php tests/run.php            # everything
 php tests/run.php Code       # only classes matching a substring
 ```
 
-It exits non-zero on failure, so it drops into CI unchanged. The provider tests
-use a scripted fake rather than the network; the extraction tests are built
-from messages captured verbatim from the live sources.
+It exits non-zero on failure, so it drops into CI unchanged. The aggregator
+tests use a scripted fake rather than the network; the extraction tests are
+built from messages captured verbatim from the live sources.
+
+The provider parser tests pin their selectors against saved pages in
+`tests/fixtures/`, real responses with the ad scripts stripped. Those tests
+run the provider's own parsing code and do no I/O: `HttpClient` is
+constructor-injected, and the test passes a subclass that reads the fixture
+instead. This is why `HttpClient` is not `final`.
 
 ## Endpoints
 
@@ -157,7 +167,13 @@ php examples/cli.php random all 5
   the matching provider may need updated selectors.
 - `time` is empty for sources that do not publish per-message timestamps
   (for example freephonenum.com). Its format follows the source: relative
-  text on receive-sms.cc, ISO 8601 timestamps on esimplus.me.
+  text on receive-sms.cc and receivesmsonline.net, ISO 8601 timestamps on
+  esimplus.me. A source's listing may likewise leave `last_seen` null — that
+  is the case for freephonenum.com and receivesmsonline.net, which publish a
+  lifetime message total but no timestamp for it.
+- On receivesmsonline.net the sending number is already masked by the site
+  itself (`1760209XXXX`), so `from` is a masked value rather than a real
+  number. That is a property of the source, not a parsing fault.
 - Long messages that a source splits across rows arrive as separate fragments,
   and a fragment rarely carries the code. `latest` therefore inspects up to
   three numbers per source and prefers one whose messages contain a code;
@@ -181,6 +197,15 @@ source website is the most useful contribution. In short:
 2. Set its `SLUG`, `NAME` and `baseUrl`, and implement `getUsNumbers()` and
    `getMessages()`.
 3. Register it in the constructor of `src/SmsAggregator.php`.
+4. Add a parser test against a saved page in `tests/fixtures/`.
+
+Country filtering is the trap worth knowing before step 2. Several of these
+sites mix countries on one listing page, and `+1` is not a US guarantee: Canada
+shares country code `1`, so a Quebec number is eleven digits beginning with a
+`1` and passes every length and prefix test there is. receivesmsonline.net
+lists a Canadian, two German and one UK number on its page titled "usa". Key
+off whatever the row itself says about its country, and only treat the number
+as a second filter, never as the first.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
@@ -189,8 +214,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 This project does not own or host any phone numbers or SMS content. All data is
 fetched at runtime from third-party websites and remains the property of those
 sites and their owners. The names and page content of receive-sms.cc,
-freephonenum.com and esimplus.me belong to their respective owners and are
-referenced only to locate publicly displayed data.
+receivesmsonline.net, freephonenum.com and esimplus.me belong to their
+respective owners and are referenced only to locate publicly displayed data.
 
 The numbers on these sites are public and shared by many people. Do not use
 them for private accounts, real identity verification, or anything requiring

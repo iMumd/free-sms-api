@@ -32,6 +32,7 @@ one envelope.
 Source slugs come from the `sources` endpoint. Current values:
 
 - `receive-sms.cc`
+- `receivesmsonline.net`
 - `freephonenum.com`
 - `esimplus.me`
 
@@ -53,7 +54,14 @@ Number object:
 `number` is always the canonical US form with the country code
 (`1` + 10 digits), regardless of how the source site formats it.
 `messages` (count) and `last_seen` may be `null` when a source does not
-publish them (for example `freephonenum.com`).
+publish them (for example `freephonenum.com`). `receivesmsonline.net` publishes
+a lifetime message count but no timestamp for it, so its `last_seen` is `null`
+while `messages` is populated.
+
+`number` is US only, and that filter is applied against the source's own
+country label rather than the number. `receivesmsonline.net` serves a "usa"
+page that also lists a Canadian number sharing country code `1`, so a number
+alone cannot decide this.
 
 Message object:
 
@@ -70,6 +78,10 @@ Message object:
 `time` may be an empty string when a source does not publish per-message
 timestamps. `code` is the best-effort extracted verification code, or `null`
 when none is detected.
+
+`from` carries whatever the source exposes for the sender, which is not always
+a usable number: `receivesmsonline.net` masks it before it reaches the page
+(`1760209XXXX`), and a masked value is passed through as-is.
 
 ### How `code` is chosen
 
@@ -112,6 +124,7 @@ Response:
   "ok": true,
   "data": [
     { "slug": "receive-sms.cc", "name": "Receive SMS CC" },
+    { "slug": "receivesmsonline.net", "name": "Receive SMS Online" },
     { "slug": "freephonenum.com", "name": "FreePhoneNum" },
     { "slug": "esimplus.me", "name": "eSIM Plus" }
   ],
@@ -381,7 +394,7 @@ GET /?action=numbers&source=example.com
 {
   "ok": false,
   "data": null,
-  "error": "Unknown source 'example.com'. Available: receive-sms.cc, freephonenum.com, esimplus.me"
+  "error": "Unknown source 'example.com'. Available: receive-sms.cc, receivesmsonline.net, freephonenum.com, esimplus.me"
 }
 ```
 
