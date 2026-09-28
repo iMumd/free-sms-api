@@ -38,6 +38,7 @@ free-sms-api/
       HttpClient.php          cURL layer with retries and caching
     Support/
       CodeExtractor.php       Verification-code (OTP) extraction
+      PhoneNumber.php         US number normalisation and validation
     Provider/
       ProviderInterface.php   Provider contract
       AbstractProvider.php    Shared scraping helpers
@@ -49,6 +50,12 @@ free-sms-api/
     responses/                Real sample responses
   docs/
     API.md                    Full API reference
+  tests/
+    run.php                   Dependency-free test runner
+    FakeProvider.php          Scripted provider used by the aggregator tests
+    CodeExtractorTest.php
+    PhoneNumberTest.php
+    SmsAggregatorTest.php
   autoload.php                PSR-4 autoloader (no Composer needed)
   composer.json
   CONTRIBUTING.md             How to add a new source
@@ -73,6 +80,20 @@ curl "http://127.0.0.1:8080/?action=latest&limit=5"
 curl "http://127.0.0.1:8080/?action=random&limit=5"
 ```
 
+## Testing
+
+The suite is offline and has no Composer dependencies, matching the rest of the
+project:
+
+```
+php tests/run.php            # everything
+php tests/run.php Code       # only classes matching a substring
+```
+
+It exits non-zero on failure, so it drops into CI unchanged. The provider tests
+use a scripted fake rather than the network; the extraction tests are built
+from messages captured verbatim from the live sources.
+
 ## Endpoints
 
 | Action     | Parameters                              | Description                                  |
@@ -81,8 +102,8 @@ curl "http://127.0.0.1:8080/?action=random&limit=5"
 | `numbers`  | `source`, `limit`                       | List available US numbers.                   |
 | `number`   | `source`                                | First available number.                      |
 | `messages` | `number` (required), `source`, `limit`  | Latest messages and codes for a number.      |
-| `latest`   | `source`, `limit`                       | Pick a number and return its messages.       |
-| `random`   | `source`, `limit`                       | Pick a random number and return its messages and extracted codes. |
+| `latest`   | `source`, `limit`                       | A number and its messages, preferring one that has a code. |
+| `random`   | `source`, `limit`                       | A random number and its messages and extracted codes. |
 
 `source` defaults to `all` (merge every source). `limit` defaults to 20 and is
 clamped to 1-100. See `docs/API.md` for the full reference and example payloads.
@@ -129,15 +150,27 @@ php examples/cli.php random all 5
 
 - Numbers are always returned in the canonical US form with the country code
   (`1` + 10 digits), whatever format the source site uses. As input, both
-  forms are accepted on every source.
+  forms are accepted on every source, and formatting is free: `+1 (804)
+  406-4234`, `8044064234` and `18044064234` are the same number. A value that
+  cannot be a US number is rejected with `400` before any request is made.
 - HTML scraping depends on each site's markup; if a site changes its layout,
   the matching provider may need updated selectors.
 - `time` is empty for sources that do not publish per-message timestamps
   (for example freephonenum.com). Its format follows the source: relative
   text on receive-sms.cc, ISO 8601 timestamps on esimplus.me.
+- Long messages that a source splits across rows arrive as separate fragments,
+  and a fragment rarely carries the code. `latest` therefore inspects up to
+  three numbers per source and prefers one whose messages contain a code;
+  `messages` on a specific number returns whatever that inbox holds.
 - Code extraction is heuristic. It prefers a digit run next to a keyword such
-  as "code" or "verification" and can occasionally pick a non-code number in
-  unusual messages.
+  as "code" or "verification", and otherwise takes the first standalone 4-8
+  digit run that is not part of a phone number, a date, a money amount or an
+  order reference. When nothing plausible is left it returns `null` rather
+  than guessing, because a caller cannot tell a wrong answer from a right one.
+- These numbers are shared with thousands of strangers and the messages arrive
+  unfiltered. Message bodies can contain other people's names, handles,
+  addresses and, occasionally, credentials. Treat `text` as untrusted input:
+  do not log it, index it, or forward it anywhere without redacting it first.
 
 ## Contributing
 
@@ -162,6 +195,11 @@ referenced only to locate publicly displayed data.
 The numbers on these sites are public and shared by many people. Do not use
 them for private accounts, real identity verification, or anything requiring
 confidentiality; anyone can read the messages they receive.
+
+The same applies to the message bodies. They are passed through exactly as the
+source site publishes them, which means the API will hand you whatever other
+people happened to receive on a shared number, including personal details. If
+you store the output, redact it first.
 
 Use this software only in ways that comply with each source website's terms of
 service and robots policy, and with all laws that apply to you. Send requests
