@@ -101,9 +101,12 @@ $filter  = $argv[1] ?? '';
 $runner  = new TestRunner();
 $classes = [];
 
-foreach (glob(__DIR__ . '/*Test.php') ?: [] as $file) {
+// Helpers are loaded first; only *Test.php files contribute test classes.
+foreach (glob(__DIR__ . '/*.php') ?: [] as $file) {
     require_once $file;
-    $classes[] = basename($file, '.php');
+    if (str_ends_with($file, 'Test.php')) {
+        $classes[] = basename($file, '.php');
+    }
 }
 
 sort($classes);

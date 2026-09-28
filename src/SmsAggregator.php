@@ -24,6 +24,13 @@ final class SmsAggregator
      */
     private const RANDOM_POOL_SIZE = 30;
 
+    /**
+     * How many numbers latest() inspects per provider while looking for an
+     * inbox that contains a code. Kept small to bound the upstream requests
+     * this endpoint can turn into.
+     */
+    private const LATEST_PROBES = 3;
+
     /** @var array<string,ProviderInterface> */
     private array $providers;
 
@@ -165,27 +172,57 @@ final class SmsAggregator
     }
 
     /**
-     * Pick the first available number and return its messages in one call.
+     * Pick a number and return its messages in one call.
+     *
+     * A number whose messages actually contain a code is preferred, because
+     * the point of this endpoint is to hand back a code. Each provider is
+     * probed for at most LATEST_PROBES numbers, and the first inbox seen is
+     * kept as a fallback so that a call with no code anywhere still returns
+     * 200 with an empty inbox rather than a failure.
      *
      * @return array{number:array<string,mixed>, messages:array<int,array<string,mixed>>}|null
      */
     public function latest(string $source = 'all', int $limit = 20): ?array
     {
+        $fallback = null;
+
         foreach ($this->resolve($source) as $provider) {
             try {
-                $number = $provider->getFirstUsNumber();
-                if ($number === null) {
+                $candidates = $provider->getUsNumbers(self::LATEST_PROBES);
+            } catch (\Throwable) {
+                // The listing is unreachable; try the next provider.
+                continue;
+            }
+
+            foreach ($candidates as $number) {
+                try {
+                    $messages = $provider->getMessages($number['number'], $limit);
+                } catch (\Throwable) {
+                    // This number is unreadable; try the next one.
                     continue;
                 }
-                return [
-                    'number'   => $number,
-                    'messages' => $provider->getMessages($number['number'], $limit),
-                ];
-            } catch (\Throwable) {
-                // try the next provider
+
+                $fallback ??= ['number' => $number, 'messages' => $messages];
+
+                if (self::hasCode($messages)) {
+                    return ['number' => $number, 'messages' => $messages];
+                }
             }
         }
-        return null;
+
+        return $fallback;
+    }
+
+    /** Whether any message carries an extracted verification code. */
+    private static function hasCode(array $messages): bool
+    {
+        foreach ($messages as $message) {
+            if (($message['code'] ?? null) !== null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
