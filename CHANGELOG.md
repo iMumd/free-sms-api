@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-- Add parsers for sms-online.co and receive-sms-free.cc, with dated evidence and
-  explicit local PHP transport restrictions in `docs/SOURCES.md`.
+- Retain only freephonenum.com after direct PHP listing and nonempty inbox
+  verification. Remove five blocked/unverified providers, their registrations
+  and provider-specific fixtures. Alternate-client parser checks no longer
+  qualify a source for inclusion.
 - Continue first-number selection after source failures; report failed random
   inbox/listing reads instead of returning misleading empty results.
 - Bound decoded HTTP responses and cache size, separate cache entries by request

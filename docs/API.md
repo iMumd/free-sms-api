@@ -29,8 +29,9 @@ and invalid limits/numbers return 400. Number formatting is normalized, but a
 `+1` prefix alone cannot distinguish the US from other NANP countries. Provider
 listing filters use available country evidence.
 
-For **numbers**, the limit applies **per source**, not globally: six configured
-sources with `limit=4` can return up to 24 entries. Providers run sequentially.
+For **numbers**, the limit applies **per source**, not globally. Only
+`freephonenum.com` is currently included, so `limit=4` returns at most four
+entries. Custom injected providers run sequentially.
 Other actions bound messages per inspected inbox; `random` does not shrink its
 candidate pool to match the message limit.
 
@@ -41,7 +42,7 @@ candidate pool to match the message limit.
 | `?action=sources` | Array of `{slug, name}`; registration is not a health check |
 | `?action=numbers&source=all&limit=2` | Array of number records; failed sources appear in `error` |
 | `?action=number&source=all` | First available number; falls through failed sources |
-| `?action=messages&number=12025550123&source=sms-online.co&limit=2` | `{source, number, messages}` |
+| `?action=messages&number=12025550123&source=freephonenum.com&limit=2` | `{source, number, messages}` |
 | `?action=latest&source=all&limit=2` | `{number, messages}`; prefers an inbox containing an extracted code |
 | `?action=random&source=all&limit=2` | `{number, messages, codes}`; codes are distinct |
 
@@ -59,10 +60,10 @@ All examples below are synthetic.
 
 ```json
 {
-  "source": "sms-online.co",
+  "source": "freephonenum.com",
   "number": "12025550123",
   "display": "+12025550123",
-  "link": "https://sms-online.co/receive-free-sms/12025550123",
+  "link": "https://freephonenum.com/us/receive-sms/2025550123",
   "messages": null,
   "last_seen": null
 }
@@ -73,9 +74,9 @@ rate. `last_seen` is nullable provider metadata, not normalized freshness.
 
 ```json
 {
-  "source": "sms-online.co",
+  "source": "freephonenum.com",
   "from": "Test Sender",
-  "time": "2 minutes ago",
+  "time": "",
   "text": "Synthetic test code: 654321",
   "code": "654321"
 }
@@ -106,12 +107,12 @@ require 'autoload.php';
 
 $sms = new FreeSms\SmsAggregator();
 $sources = $sms->sources(); // No upstream requests.
-$result = $sms->numbers('sms-online.co', 2);
+$result = $sms->numbers('freephonenum.com', 2);
 ```
 
 ```sh
 php examples/cli.php sources
-php examples/cli.php numbers sms-online.co 2
+php examples/cli.php numbers freephonenum.com 2
 ```
 
 The library preserves provider injection for offline testing. Individual

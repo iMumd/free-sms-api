@@ -19,16 +19,15 @@ php -S 127.0.0.1:8080 -t public
 
 ```sh
 curl 'http://127.0.0.1:8080/?action=sources'
-curl 'http://127.0.0.1:8080/?action=numbers&source=sms-online.co&limit=2'
+curl 'http://127.0.0.1:8080/?action=numbers&source=freephonenum.com&limit=2'
 ```
 
 ## Availability
 
-Six integrations are registered. The two new parsers, `sms-online.co` and
-`receive-sms-free.cc`, were checked against public listings and inboxes, but
-direct PHP requests returned **403 in the development environment**. Existing
-sources also have unresolved availability limits. See the dated
-[verification record](docs/SOURCES.md) before relying on any source.
+`freephonenum.com` is the only included source. On 2026-10-31, direct PHP HTTPS
+checks fetched its listing and read messages from two inboxes. Blocked and
+unverified providers have been removed, not left registered. See the
+[verification record](docs/SOURCES.md) for scope and limitations.
 
 This project reads shared public inboxes; it does not send SMS, own the numbers
 or guarantee delivery, freshness or third-party acceptance. Never use public

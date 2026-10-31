@@ -13,7 +13,7 @@ namespace FreeSms\Provider;
  */
 interface ProviderInterface
 {
-    /** Stable machine identifier, e.g. "receive-sms.cc". */
+    /** Stable machine identifier, e.g. "freephonenum.com". */
     public function slug(): string;
 
     /** Human-readable name, e.g. "Receive SMS CC". */
