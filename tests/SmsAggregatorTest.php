@@ -147,8 +147,7 @@ final class SmsAggregatorTest
         assertSame('10000000001', $result['number']['number']);
     }
 
-    /** A message fetch that fails must not lose the number we already picked. */
-    public function testRandomSurvivesAMessageFailure(): void
+    public function testRandomReportsAnUnreadableInboxInsteadOfEmptySuccess(): void
     {
         $sms = new SmsAggregator([
             (new FakeProvider('alpha'))
@@ -156,11 +155,27 @@ final class SmsAggregatorTest
                 ->withFailures(['10000000001' => 'upstream 502']),
         ]);
 
-        $result = $sms->random('alpha', 5);
+        try {
+            $sms->random('alpha', 5);
+            throw new RuntimeException('Expected upstream failure');
+        } catch (RuntimeException $e) {
+            assertSame('upstream 502', $e->getMessage());
+        }
+    }
 
-        assertSame('10000000001', $result['number']['number']);
-        assertSame([], $result['messages']);
-        assertSame([], $result['codes']);
+    public function testFirstNumberContinuesAfterAnUpstreamFailure(): void
+    {
+        $sms = new SmsAggregator([
+            (new FakeProvider('down'))->withFailingListing(),
+            (new FakeProvider('up'))->withNumbers('12025550123'),
+        ]);
+        assertSame('12025550123', $sms->firstNumber()['number']);
+        try {
+            $sms->firstNumber('down');
+            throw new RuntimeException('Expected upstream error');
+        } catch (RuntimeException $e) {
+            assertTrue(str_contains($e->getMessage(), 'source failed'));
+        }
     }
 
     public function testRandomIsNullWhenNoNumbersExist(): void
@@ -168,6 +183,17 @@ final class SmsAggregatorTest
         $sms = new SmsAggregator([(new FakeProvider('empty'))]);
 
         assertSame(null, $sms->random());
+    }
+
+    public function testRandomReportsListingFailures(): void
+    {
+        $sms = new SmsAggregator([(new FakeProvider('down'))->withFailingListing()]);
+        try {
+            $sms->random();
+            throw new RuntimeException('Expected upstream failure');
+        } catch (RuntimeException $e) {
+            assertTrue(str_contains($e->getMessage(), 'source failed'));
+        }
     }
 
     /** The whole point of latest(): a number that has a code wins. */

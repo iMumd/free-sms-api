@@ -43,6 +43,9 @@ final class ReceiveSmsOnlineProvider extends AbstractProvider
 
     public function getUsNumbers(int $limit = 30): array
     {
+        if ($limit < 1) {
+            return [];
+        }
         $html  = $this->http->getHtml($this->baseUrl . '/usa.html', $this->baseUrl . '/');
         $xpath = $this->xpath($html);
         $rows  = $xpath->query('//table//tr');
@@ -96,6 +99,9 @@ final class ReceiveSmsOnlineProvider extends AbstractProvider
 
     public function getMessages(string $number, int $limit = 20): array
     {
+        if ($limit < 1) {
+            return [];
+        }
         $number = $this->normaliseNumber($number);
         $html   = $this->http->getHtml($this->numberUrl($number), $this->baseUrl . '/usa.html');
         $xpath  = $this->xpath($html);

@@ -22,6 +22,9 @@ final class EsimPlusProvider extends AbstractProvider
 
     public function getUsNumbers(int $limit = 30): array
     {
+        if ($limit < 1) {
+            return [];
+        }
         $html    = $this->http->getHtml($this->baseUrl . '/temporary-numbers', $this->baseUrl . '/');
         $payload = str_replace('\"', '"', $html);
 
@@ -62,6 +65,9 @@ final class EsimPlusProvider extends AbstractProvider
 
     public function getMessages(string $number, int $limit = 20): array
     {
+        if ($limit < 1) {
+            return [];
+        }
         $number = $this->normaliseNumber($number);
         $data   = $this->http->getJson(
             $this->baseUrl . '/api/sms-receiver/' . $number . '/sms?perPage=' . $limit,

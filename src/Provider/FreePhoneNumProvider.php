@@ -26,6 +26,9 @@ final class FreePhoneNumProvider extends AbstractProvider
 
     public function getUsNumbers(int $limit = 30): array
     {
+        if ($limit < 1) {
+            return [];
+        }
         $html  = $this->http->getHtml($this->baseUrl . '/us', $this->baseUrl . '/');
         $xpath = $this->xpath($html);
         $links = $xpath->query('//a[contains(@href, "/us/receive-sms/")]');
@@ -71,6 +74,9 @@ final class FreePhoneNumProvider extends AbstractProvider
 
     public function getMessages(string $number, int $limit = 20): array
     {
+        if ($limit < 1) {
+            return [];
+        }
         $number = PhoneNumber::usLocal($this->normaliseNumber($number));
         $html   = $this->http->getHtml($this->baseUrl . '/us/receive-sms/' . $number);
         $xpath  = $this->xpath($html);
