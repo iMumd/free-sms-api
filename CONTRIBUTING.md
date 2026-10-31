@@ -10,7 +10,7 @@ Requires PHP 8.1+ with `curl`, `dom`, `mbstring`; integration tests also use
 
 ```sh
 php tests/run.php
-php tests/run.php NewProviders
+php tests/run.php FreePhoneNum
 ```
 
 CI checks syntax, Composer metadata and the suite on Windows/Linux with PHP
@@ -32,9 +32,11 @@ CI checks syntax, Composer metadata and the suite on Windows/Linux with PHP
 5. Add **synthetic** fixtures and offline parser tests covering country filters,
    malformed/duplicate links, empty inboxes, text/entities and limits. Inject a
    fake HTTP client; do not save live SMS bodies, OTPs or credentials.
-6. Register the provider in `src/SmsAggregator.php` and update
-   [source status](docs/SOURCES.md). Clearly distinguish parser verification,
-   actual PHP transport success, blocked routes and unverified behavior.
+6. Register a provider in `src/SmsAggregator.php` only after the actual PHP
+   runtime successfully fetches the listing and reads messages from an inbox.
+   A parser test, homepage 200 or alternate HTTP client's success is insufficient.
+   Do not include blocked or unverified implementations. Update
+   [source status](docs/SOURCES.md) with the direct PHP evidence.
 
 ## Pull request checklist
 

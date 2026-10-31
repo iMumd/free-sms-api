@@ -36,7 +36,7 @@ before deployment or marketing.
 Requests are sequential and can be slow. By default, each upstream request has
 a 20-second timeout and up to two transient retries; redirects are capped at
 five. `latest` can probe three inboxes per source, and `source=all` expands work
-across six sources. Set proxy/PHP worker deadlines and concurrency budgets
+across the configured sources (currently only `freephonenum.com`). Set proxy/PHP worker deadlines and concurrency budgets
 accordingly; specifying a single source reduces fan-out. A response byte bound
 is not an overall API execution deadline.
 

@@ -1,51 +1,50 @@
 # Source status
 
-Last checked: **2026-10-31**. These are independent public websites, not
-contracted SMS gateways. A registered provider is not a promise of availability.
+Last checked: **2026-10-31**, Windows, PHP 8.3.36-1 with cURL and TLS verification.
 
-| Source | Evidence | PHP HTTPS check from the development environment |
-| --- | --- | --- |
-| sms-online.co | Public listing: 1 US card; PHP parser read 20 sampled messages, including sender/time | HTTP 403 |
-| receive-sms-free.cc | Public listing: 18 US cards; PHP parser read 20 sampled messages, including sender/time | HTTP 403 |
-| receive-sms.cc | Existing integration; listing/inbox robots checks allowed | Listing HTTP 403 |
-| receivesmsonline.net | Existing offline fixture coverage | Live verification incomplete: robots request failed; no inbox requested |
-| freephonenum.com | PHP fetched 2 listing entries | Sample inbox returned no parsed messages; not verified as readable |
-| esimplus.me | Existing integration; listing/inbox robots checks allowed | Listing HTTP 403 |
+## Included source
 
-## What was verified
-
-For the two new parsers, public pages were fetched with a named audit client
-after checking robots rules. The HTML was passed **in memory** to the actual PHP
-provider parsers. Only counts and presence of sender/time fields were reported.
-No new live SMS bodies or codes were saved as fixtures, logs or examples.
-
-The new listings require explicit US country evidence, not just a `+1` prefix.
-Duplicate entries and off-origin inbox links are excluded. Synthetic tests
-cover parsing, entities, limits and invalid input.
-
-However, direct PHP/cURL requests returned 403 in this environment. Therefore
-these are **parser-verified integrations with blocked local transport**, not
-end-to-end verified working PHP sources. No CAPTCHA, block or access control was
-bypassed. Recheck using the actual deployment's PHP runtime before advertising
-availability. Successful reads would still not prove delivery, freshness, number
-ownership or acceptance by any third-party service.
-
-## Candidates not registered
-
-| Candidate | Reason |
+| Source | Direct PHP verification |
 | --- | --- |
-| sms24.me | Explicit agent/crawler restrictions; inspection stopped |
-| receive-smss.com, receivesmsonline.in | HTTP 403 |
-| quackr.io | Listing found; no verified inbox message rows |
-| anonymsms.com / asms.ai | Domain redirect; sampled inbox redirected to country listing; restricted API routes not used |
-| tempsmss.com | No verified US inbox candidates on the discovered country route |
-| receive-sms-online.info, sms-receive.net, receive-sms-number.com | No verified suitable US listing/inbox pair |
+| freephonenum.com | Two direct PHP checks each listed 3 sampled US entries; two inboxes in each check returned 2 parsed messages each with a limit of 2 |
 
-## Rechecking
+These checks used the project's `HttpClient` and `FreePhoneNumProvider`, not a
+different HTTP client feeding saved HTML to a parser. Readable inboxes contained
+16–20 structural message rows. One sampled inbox in each check was empty;
+listing order and contents changed between checks. An empty inbox does not prove
+the whole source is unavailable. No delivery test
+was performed. The provider does not expose per-message timestamps.
 
-Check the current terms and robots rules first, including the inbox route.
-Use one listing and one inbox at low rate, with TLS verification enabled.
-Report the date, environment, redirects, country evidence, counts and failures
-in a PR. Do not publish message text, phone-number ownership claims or codes.
-Do not infer success from a homepage HTTP 200 or silently replace transport
-failures with an empty inbox.
+Current listing and inbox robots checks permitted the inspected routes. Only
+counts were reported; no live message bodies or codes were saved or published.
+Offline parser tests use synthetic data.
+
+A separate live facade check also passed: the default aggregator exposed only
+`freephonenum.com`; `latest('all', 2)` returned 2 messages, and reading that
+number through `messages()` returned 2 messages with no source errors.
+
+## Removed providers
+
+The following implementations, registrations and provider-specific fixtures
+have been removed. They are not available through this API:
+
+| Removed source | Reason |
+| --- | --- |
+| receive-sms.cc | Direct PHP listing returned HTTP 403 |
+| receivesmsonline.net | Robots request returned HTTP 403; no current verified inbox read |
+| esimplus.me | Direct PHP listing returned HTTP 403 |
+| sms-online.co | Direct PHP listing returned HTTP 403; alternate-client parser verification was insufficient |
+| receive-sms-free.cc | Direct PHP listing returned HTTP 403; alternate-client parser verification was insufficient |
+
+## Availability policy
+
+Only include sources with successful listing **and nonempty inbox reads through
+the actual PHP implementation**. A homepage 200, synthetic parser fixture or
+alternate HTTP client is not enough. Blocked/unverified sources must not remain
+registered as usable sources. No CAPTCHA or access controls may be bypassed.
+
+This record proves successful reads at the stated time, not perpetual uptime,
+fresh SMS delivery, number ownership or third-party signup acceptance. Public
+inboxes can be empty and remote websites can change. Recheck policies and reads
+from the deployment runtime before relying on the service. Do not advertise a
+100% availability or delivery guarantee for an independent public website.
