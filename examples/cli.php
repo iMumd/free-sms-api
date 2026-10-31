@@ -12,7 +12,7 @@
  *
  * Examples:
  *   php examples/cli.php numbers all 5
- *   php examples/cli.php messages 16465180948 receive-sms.cc 5
+ *   php examples/cli.php messages 12025550123 freephonenum.com 5
  *   php examples/cli.php latest freephonenum.com 5
  *   php examples/cli.php random all 5
  */

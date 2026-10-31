@@ -6,13 +6,8 @@ namespace FreeSms;
 
 use InvalidArgumentException;
 use FreeSms\Support\PhoneNumber;
-use FreeSms\Provider\EsimPlusProvider;
 use FreeSms\Provider\FreePhoneNumProvider;
 use FreeSms\Provider\ProviderInterface;
-use FreeSms\Provider\ReceiveSmsCcProvider;
-use FreeSms\Provider\ReceiveSmsOnlineProvider;
-use FreeSms\Provider\SmsOnlineCoProvider;
-use FreeSms\Provider\ReceiveSmsFreeProvider;
 
 /**
  * Facade that registers every provider and merges their results behind a
@@ -43,12 +38,7 @@ final class SmsAggregator
     public function __construct(?array $providers = null)
     {
         $providers ??= [
-            new ReceiveSmsCcProvider(),
-            new ReceiveSmsOnlineProvider(),
             new FreePhoneNumProvider(),
-            new EsimPlusProvider(),
-            new SmsOnlineCoProvider(),
-            new ReceiveSmsFreeProvider(),
         ];
 
         $this->providers = [];

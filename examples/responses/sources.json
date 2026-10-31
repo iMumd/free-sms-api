@@ -1,22 +1,7 @@
 {
     "ok": true,
     "data": [
-        {
-            "slug": "receive-sms.cc",
-            "name": "Receive SMS CC"
-        },
-        {
-            "slug": "receivesmsonline.net",
-            "name": "Receive SMS Online"
-        },
-        {
-            "slug": "freephonenum.com",
-            "name": "FreePhoneNum"
-        },
-        {
-            "slug": "esimplus.me",
-            "name": "eSIM Plus"
-        }
+        {"slug": "freephonenum.com", "name": "FreePhoneNum"}
     ],
     "error": null
 }

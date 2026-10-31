@@ -38,12 +38,11 @@ final class FreePhoneNumProvider extends AbstractProvider
 
         foreach ($links as $link) {
             $href = $link->getAttribute('href');
-            if (!preg_match('#^https?://freephonenum\.com/us/receive-sms/(\d+)#', $href, $m)
-                && !preg_match('#^/us/receive-sms/(\d+)#', $href, $m)) {
+            if (!preg_match('#^(?:https://freephonenum\.com)?/us/receive-sms/(\d{10}|1\d{10})/?$#D', $href, $m)) {
                 continue;
             }
 
-            $number = $m[1];
+            $number = PhoneNumber::usLocal($m[1]);
             if (isset($seen[$number])) {
                 continue;
             }
