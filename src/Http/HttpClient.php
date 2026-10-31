@@ -7,8 +7,7 @@ namespace FreeSms\Http;
 use RuntimeException;
 
 /**
- * Thin cURL wrapper that fetches HTML pages and JSON endpoints using real
- * browser headers.
+ * Bounded cURL wrapper for public HTML pages and JSON endpoints.
  *
  * It retries transient failures with a linear backoff and keeps a small
  * per-instance response cache so the same URL is not fetched twice within
@@ -19,8 +18,7 @@ use RuntimeException;
  */
 class HttpClient
 {
-    private const USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
-        . '(KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
+    private const USER_AGENT = 'FreeSmsProviderAudit/1.0 (+https://github.com/iMumd/free-sms-api)';
 
     /** @var array<string,string> */
     private array $cache = [];
@@ -28,7 +26,11 @@ class HttpClient
     public function __construct(
         private readonly int $timeout = 20,
         private readonly int $retries = 2,
+        private readonly int $maxBytes = 4_194_304,
     ) {
+        if ($timeout < 1 || $retries < 0 || $retries > 5 || $maxBytes < 1) {
+            throw new \InvalidArgumentException('Invalid HTTP timeout, retry count or response size limit.');
+        }
     }
 
     /**
@@ -40,8 +42,6 @@ class HttpClient
     {
         return $this->request($url, $referer, [
             'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Sec-Fetch-Mode: navigate',
-            'Upgrade-Insecure-Requests: 1',
         ]);
     }
 
@@ -55,7 +55,6 @@ class HttpClient
     {
         $body = $this->request($url, $referer, [
             'Accept: application/json, */*;q=0.8',
-            'Sec-Fetch-Mode: cors',
         ]);
 
         $data = json_decode($body, true);
@@ -72,16 +71,34 @@ class HttpClient
      */
     private function request(string $url, string $referer, array $headers): string
     {
-        if (isset($this->cache[$url])) {
-            return $this->cache[$url];
+        if (!in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https'], true)) {
+            throw new \InvalidArgumentException('Only HTTP and HTTPS URLs are supported.');
+        }
+        $key = hash('sha256', serialize([$url, $referer, $headers]));
+        if (isset($this->cache[$key])) {
+            return $this->cache[$key];
         }
 
         $lastError = 'unknown error';
 
         for ($attempt = 0; $attempt <= $this->retries; $attempt++) {
+            $body = '';
+            $tooLarge = false;
             $ch = curl_init($url);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
+            $https = parse_url($url, PHP_URL_SCHEME) === 'https';
+            $protocols = defined('CURLOPT_PROTOCOLS_STR')
+                ? [CURLOPT_PROTOCOLS_STR => 'http,https', CURLOPT_REDIR_PROTOCOLS_STR => $https ? 'https' : 'http,https']
+                : [CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+                    CURLOPT_REDIR_PROTOCOLS => $https ? CURLPROTO_HTTPS : CURLPROTO_HTTP | CURLPROTO_HTTPS];
+            curl_setopt_array($ch, $protocols + [
+                CURLOPT_WRITEFUNCTION => function ($handle, string $chunk) use (&$body, &$tooLarge): int {
+                    if (strlen($body) + strlen($chunk) > $this->maxBytes) {
+                        $tooLarge = true;
+                        return 0;
+                    }
+                    $body .= $chunk;
+                    return strlen($chunk);
+                },
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_MAXREDIRS      => 5,
                 CURLOPT_TIMEOUT        => $this->timeout,
@@ -95,18 +112,31 @@ class HttpClient
                 ]),
             ]);
 
-            $body   = curl_exec($ch);
+            $success = curl_exec($ch);
             $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $error  = curl_error($ch);
-            curl_close($ch);
+            $errno  = curl_errno($ch);
+            unset($ch);
 
-            if (is_string($body) && $body !== '' && $status >= 200 && $status < 300) {
-                $this->cache[$url] = $body;
+            if ($tooLarge) {
+                throw new RuntimeException("Response exceeds {$this->maxBytes} bytes: {$url}");
+            }
+            if ($success !== false && $status >= 200 && $status < 300) {
+                if (count($this->cache) >= 32) {
+                    array_shift($this->cache);
+                }
+                $this->cache[$key] = $body;
                 return $body;
             }
 
             $lastError = $error !== '' ? $error : "HTTP {$status}";
 
+            $transient = $errno !== 0
+                ? in_array($errno, [CURLE_COULDNT_CONNECT, CURLE_OPERATION_TIMEDOUT, CURLE_RECV_ERROR, CURLE_SEND_ERROR, CURLE_PARTIAL_FILE], true)
+                : in_array($status, [408, 429, 500, 502, 503, 504], true);
+            if (!$transient) {
+                break;
+            }
             if ($attempt < $this->retries) {
                 usleep(600_000 * ($attempt + 1));
             }

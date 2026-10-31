@@ -42,17 +42,29 @@ function respond(bool $ok, mixed $data = null, ?string $error = null, int $statu
     http_response_code($status);
     echo json_encode(
         ['ok' => $ok, 'data' => $data, 'error' => $error],
-        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE
     );
     exit;
 }
 
-$action = (string) ($_GET['action'] ?? 'numbers');
-$source = (string) ($_GET['source'] ?? 'all');
-$limit  = max(1, min(100, (int) ($_GET['limit'] ?? 20)));
-$sms    = new SmsAggregator();
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+    header('Allow: GET, OPTIONS');
+    respond(false, null, 'Method not allowed.', 405);
+}
 
 try {
+    foreach (['action', 'source', 'limit', 'number'] as $parameter) {
+        if (isset($_GET[$parameter]) && !is_string($_GET[$parameter])) {
+            throw new InvalidArgumentException("The '{$parameter}' parameter must be a scalar string.");
+        }
+    }
+    $action = $_GET['action'] ?? 'numbers';
+    $source = $_GET['source'] ?? 'all';
+    if (isset($_GET['limit']) && !preg_match('/^\d+$/D', $_GET['limit'])) {
+        throw new InvalidArgumentException("The 'limit' parameter must be a nonnegative integer.");
+    }
+    $limit = max(1, min(100, (int) ($_GET['limit'] ?? 20)));
+    $sms = new SmsAggregator();
     switch ($action) {
         case 'sources':
             respond(true, $sms->sources());
@@ -60,9 +72,10 @@ try {
         case 'numbers':
             $result = $sms->numbers($source, $limit);
             $errors = $result['errors'] !== []
-                ? json_encode($result['errors'], JSON_UNESCAPED_UNICODE)
+                ? json_encode($result['errors'], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)
                 : null;
-            respond($result['numbers'] !== [] || $result['errors'] === [], $result['numbers'], $errors);
+            $ok = $result['numbers'] !== [] || $result['errors'] === [];
+            respond($ok, $result['numbers'], $errors, $ok ? 200 : 502);
 
         case 'number':
             $number = $sms->firstNumber($source);
@@ -93,9 +106,9 @@ try {
                 ]);
             }
             $errors = $result['errors'] !== []
-                ? json_encode($result['errors'], JSON_UNESCAPED_UNICODE)
+                ? json_encode($result['errors'], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE)
                 : 'No messages found for this number.';
-            respond(false, ['number' => $result['number'], 'messages' => []], $errors, 404);
+            respond(false, ['number' => $result['number'], 'messages' => []], $errors, $result['errors'] !== [] ? 502 : 404);
 
         case 'latest':
             $latest = $sms->latest($source, $limit);
