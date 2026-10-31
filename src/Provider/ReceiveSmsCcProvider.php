@@ -22,6 +22,9 @@ final class ReceiveSmsCcProvider extends AbstractProvider
 
     public function getUsNumbers(int $limit = 30): array
     {
+        if ($limit < 1) {
+            return [];
+        }
         $html  = $this->http->getHtml($this->baseUrl . '/US-Phone-Number/', $this->baseUrl . '/');
         $xpath = $this->xpath($html);
         $cards = $xpath->query(
@@ -66,6 +69,9 @@ final class ReceiveSmsCcProvider extends AbstractProvider
 
     public function getMessages(string $number, int $limit = 20): array
     {
+        if ($limit < 1) {
+            return [];
+        }
         $number = $this->normaliseNumber($number);
         $html   = $this->http->getHtml($this->baseUrl . '/US-Phone-Number/' . $number);
         $xpath  = $this->xpath($html);

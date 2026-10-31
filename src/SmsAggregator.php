@@ -11,6 +11,8 @@ use FreeSms\Provider\FreePhoneNumProvider;
 use FreeSms\Provider\ProviderInterface;
 use FreeSms\Provider\ReceiveSmsCcProvider;
 use FreeSms\Provider\ReceiveSmsOnlineProvider;
+use FreeSms\Provider\SmsOnlineCoProvider;
+use FreeSms\Provider\ReceiveSmsFreeProvider;
 
 /**
  * Facade that registers every provider and merges their results behind a
@@ -45,6 +47,8 @@ final class SmsAggregator
             new ReceiveSmsOnlineProvider(),
             new FreePhoneNumProvider(),
             new EsimPlusProvider(),
+            new SmsOnlineCoProvider(),
+            new ReceiveSmsFreeProvider(),
         ];
 
         $this->providers = [];
@@ -87,11 +91,20 @@ final class SmsAggregator
     /** First available number across the selected providers, or null. */
     public function firstNumber(string $source = 'all'): ?array
     {
+        $failure = null;
         foreach ($this->resolve($source) as $provider) {
-            $number = $provider->getFirstUsNumber();
+            try {
+                $number = $provider->getFirstUsNumber();
+            } catch (\Throwable $e) {
+                $failure = $e;
+                continue;
+            }
             if ($number !== null) {
                 return $number;
             }
+        }
+        if ($failure !== null) {
+            throw new \RuntimeException('No number could be selected; at least one source failed.', 0, $failure);
         }
         return null;
     }
@@ -131,8 +144,12 @@ final class SmsAggregator
     /** Random available number across the selected providers, or null. */
     public function randomNumber(string $source = 'all', int $poolSize = self::RANDOM_POOL_SIZE): ?array
     {
-        $pool = $this->numbers($source, $poolSize)['numbers'];
+        $result = $this->numbers($source, $poolSize);
+        $pool = $result['numbers'];
         if ($pool === []) {
+            if ($result['errors'] !== []) {
+                throw new \RuntimeException('No number could be selected; at least one source failed.');
+            }
             return null;
         }
         return $pool[array_rand($pool)];
@@ -156,13 +173,8 @@ final class SmsAggregator
             return null;
         }
 
-        try {
-            $messages = $this->providers[$number['source']]->getMessages($number['number'], $limit);
-        } catch (\Throwable) {
-            // The listing succeeded but the message fetch failed; report the
-            // number with an empty inbox rather than failing the whole call.
-            $messages = [];
-        }
+        // An unreadable inbox must not masquerade as a successfully empty one.
+        $messages = $this->providers[$number['source']]->getMessages($number['number'], $limit);
 
         $codes = [];
         foreach ($messages as $message) {

@@ -55,7 +55,7 @@ final class FakeProvider implements FreeSms\Provider\ProviderInterface
 
     public function getFirstUsNumber(): ?array
     {
-        return $this->numbers[0] ?? null;
+        return $this->getUsNumbers(1)[0] ?? null;
     }
 
     /** @param array<string,mixed> $overrides */

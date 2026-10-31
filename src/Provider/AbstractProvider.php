@@ -52,9 +52,13 @@ abstract class AbstractProvider implements ProviderInterface
     protected function xpath(string $html): DOMXPath
     {
         $doc = new DOMDocument();
-        libxml_use_internal_errors(true);
-        $doc->loadHTML('<?xml encoding="UTF-8">' . $html);
-        libxml_clear_errors();
+        $previous = libxml_use_internal_errors(true);
+        try {
+            $doc->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_NONET);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
 
         return new DOMXPath($doc);
     }
